@@ -31,13 +31,16 @@ try:
         print('Successfully navigated to: ${escapedUrl}')
         
         # Add delay if screenshot is enabled
-        if ${takeScreenshot}:
+        take_screenshot = ${takeScreenshot ? 'True' : 'False'}
+        if take_screenshot:
             page.wait_for_timeout(${screenshotDelay})
         
         # Take screenshot if enabled
         screenshot = None
-        if ${takeScreenshot}:
-            screenshot = page.screenshot(full_page=True, encoding='base64')
+        if take_screenshot:
+            screenshot_bytes = page.screenshot(full_page=True)
+            import base64
+            screenshot = base64.b64encode(screenshot_bytes).decode('utf-8')
         
         # Prepare result
         result = {
@@ -118,11 +121,12 @@ except Exception as e:
             try {
                 node.log('Starting Playwright automation...');
                 
-                // Call the Python-based Playwright executor
-                const scriptContent = ''; // Not used in Python implementation
-
-                // Execute the script
-                const result = await executePlaywright(scriptContent);
+                // Execute the Playwright script with the configured parameters
+                const result = await executePlaywright(
+                    this.url,
+                    this.takeScreenshot,
+                    this.screenshotDelay
+                );
                 
                 // Parse and send the result
                 try {

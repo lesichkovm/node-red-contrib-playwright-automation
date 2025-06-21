@@ -5,17 +5,35 @@ module.exports = function(RED) {
         
         // Store the node configuration
         this.name = config.name;
+        this.takeScreenshot = config.takeScreenshot;
+        this.screenshotDelay = config.screenshotDelay || 1000;
+        
+        // Log configuration
+        this.log(`Playwright Automation node initialized - Take Screenshot: ${this.takeScreenshot}, Delay: ${this.screenshotDelay}ms`);
         
         // Handle incoming messages
         this.on('input', function(msg) {
-            // Process the message with Playwright Automation
-            msg.payload = `Playwright Automation processing: ${JSON.stringify(msg.payload)}`;
-            
-            // Send the message to the next node
-            node.send(msg);
-            
-            // Log to the debug tab
-            node.log("Message processed by Playwright Automation");
+            try {
+                // Process the message with Playwright Automation
+                let result = {
+                    originalPayload: msg.payload,
+                    config: {
+                        takeScreenshot: node.takeScreenshot,
+                        screenshotDelay: node.screenshotDelay
+                    },
+                    processedAt: new Date().toISOString()
+                };
+                
+                msg.payload = result;
+                
+                // Send the message to the next node
+                node.send(msg);
+                
+                // Log to the debug tab
+                node.log(`Message processed with config: ${JSON.stringify(result.config)}`);
+            } catch (error) {
+                node.error("Error processing message: " + error.message, msg);
+            }
         });
         
         // Clean up when node is removed

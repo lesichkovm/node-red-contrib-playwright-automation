@@ -15,6 +15,8 @@ A collection of Node-RED nodes for browser automation using [Playwright](https:/
 - **Configurable**: Control browser behavior with various options
 - **Headless/Headed**: Toggle between headless and visible browser modes
 - **Smart Waiting**: Built-in waiting for elements and navigation
+- **Screenshots**: Capture screenshots with configurable delay
+- **Error Handling**: Comprehensive error handling and logging
 
 ## Installation
 
@@ -107,11 +109,47 @@ This node performs browser automation actions.
 
 ### Taking a Screenshot
 
-1. Add a Playwright Automation Config node
-2. Add a Playwright Automation node set to "Navigate to URL"
-3. Add another Playwright Automation node set to "Take Screenshot"
-4. Add a file node to save the screenshot
-5. Connect them in sequence and deploy
+1. Add a Playwright Automation node to your flow
+2. In the node configuration:
+   - Check "Take Screenshot"
+   - Set "Screenshot Delay" in milliseconds (e.g., 2000 for 2 seconds)
+3. Ensure the input message contains a `browser` property with a Playwright browser instance
+4. Optionally, include a `url` in the message to navigate before taking the screenshot
+5. The screenshot will be available in `msg.screenshot` as a base64-encoded data URL
+
+Example message to the node:
+```javascript
+{
+    "browser": browserInstance,  // From Playwright browser launch
+    "url": "https://example.com",  // Optional: URL to navigate to
+    "payload": {
+        // Your custom data
+    }
+}
+```
+
+Output message will include:
+```javascript
+{
+    "screenshot": "data:image/png;base64,...",  // Base64 encoded image
+    "screenshotTakenAt": "2025-06-21T10:42:33.123Z",
+    "payload": {
+        // Your original payload with additional processing
+        "processedAt": "2025-06-21T10:42:33.123Z"
+    }
+}
+```
+
+### Displaying the Screenshot
+
+To display the screenshot in the Node-RED Dashboard:
+1. Add a "ui_template" node from node-red-dashboard
+2. Use the following template to display the image:
+```html
+<div ng-if="msg.screenshot">
+    <h3>Screenshot taken at {{msg.screenshotTakenAt}}</h3>
+    <img ng-src="{{msg.screenshot}}" style="max-width: 100%;">
+</div>
 
 ## Message Properties
 
@@ -129,6 +167,12 @@ This node performs browser automation actions.
 - `msg.page`: Reference to the Playwright Page object (advanced usage)
 
 ## Advanced Usage
+
+### Screenshot Options
+
+- **Take Screenshot**: Enable/disable screenshot functionality
+- **Screenshot Delay**: Time to wait (in milliseconds) before taking the screenshot
+- **Require Browser Instance**: When enabled, the node will only take screenshots if a browser instance is provided in the message. When disabled, the node will attempt to create a new browser instance if needed.
 
 ### Accessing Playwright API
 

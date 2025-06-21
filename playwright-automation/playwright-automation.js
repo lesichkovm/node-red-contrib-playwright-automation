@@ -1,6 +1,6 @@
 module.exports = function(RED) {
     // Function to execute Playwright script using Python
-    function executePlaywright(url, takeScreenshot, screenshotDelay) {
+    async function executePlaywright(pythonPath, url, screenshotDelay) {
         const { exec } = require('child_process');
         const path = require('path');
         const fs = require('fs');
@@ -11,64 +11,70 @@ module.exports = function(RED) {
             const tempFile = path.join(os.tmpdir(), `playwright-script-${Date.now()}.py`);
             
             try {
-                // Escape the URL for Python string
-                const escapedUrl = url.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-                
-                // Create the Python script
+                // Create the Python script content
                 const scriptContent = `
-from playwright.sync_api import sync_playwright
+import asyncio
+from playwright.async_api import async_playwright
 import json
-import sys
+import base64
+import os
 
-try:
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
-        context = browser.new_context()
-        page = context.new_page()
+async def main():
+    async with async_playwright() as p:
+        # Launch browser
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
         
-        # Navigate to the URL
-        page.goto('${escapedUrl}', wait_until='networkidle')
-        print('Successfully navigated to: ${escapedUrl}')
-        
-        # Add delay if screenshot is enabled
-        take_screenshot = ${takeScreenshot ? 'True' : 'False'}
-        if take_screenshot:
-            page.wait_for_timeout(${screenshotDelay})
-        
-        # Take screenshot if enabled
-        screenshot = None
-        if take_screenshot:
-            screenshot_bytes = page.screenshot(full_page=True)
-            import base64
-            screenshot = base64.b64encode(screenshot_bytes).decode('utf-8')
-        
-        # Prepare result
-        result = {
-            'success': True,
-            'url': '${escapedUrl}',
-            'title': page.title(),
-            'screenshot': screenshot
-        }
-        
-        # Output the result as JSON
-        print('__PLAYWRIGHT_RESULT_START__')
-        print(json.dumps(result))
-        print('__PLAYWRIGHT_RESULT_END__')
-        
-        browser.close()
-        
-except Exception as e:
-    print('__PLAYWRIGHT_ERROR_START__')
-    print(str(e))
-    print('__PLAYWRIGHT_ERROR_END__')
-    sys.exit(1)
+        try:
+            # Navigate to the URL
+            await page.goto('${url.replace(/'/g, "\\'")}')
+            
+            # Wait for the specified delay
+            await page.wait_for_timeout(${screenshotDelay})
+            
+            # Take screenshot
+            screenshot_data = await page.screenshot(full_page=True, type='jpeg', quality=80)
+            screenshot_data = base64.b64encode(screenshot_data).decode('utf-8')
+            
+            # Get page title
+            title = await page.title()
+            
+            # Prepare result
+            result = {
+                'success': True,
+                'url': '${url}',
+                'title': title,
+                'screenshot': screenshot_data
+            }
+            
+            # Print result between markers for parsing
+            print('__PLAYWRIGHT_RESULT_START__')
+            print(json.dumps(result))
+            print('__PLAYWRIGHT_RESULT_END__')
+            
+        except Exception as e:
+            print(f"Error: {str(e)}", file=sys.stderr)
+            return 1
+        finally:
+            await browser.close()
+    return 0
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(asyncio.run(main()))
 `;
                 
                 // Write the script to a temporary file
                 fs.writeFileSync(tempFile, scriptContent);
                 
-                // Execute the Python script
-                const command = `python "${tempFile}"`;
+                // Handle paths - convert to absolute if relative, and normalize slashes
+                const path = require('path');
+                const isRelativePath = !path.isAbsolute(pythonPath);
+                const resolvedPath = isRelativePath 
+                    ? path.resolve(process.cwd(), pythonPath)
+                    : pythonPath;
+                const normalizedPath = resolvedPath.replace(/\//g, '\\\\');
+                const command = `"${normalizedPath}" "${tempFile}"`;
                 console.log('Executing command:', command);
                 
                 exec(command, { timeout: 60000 }, (error, stdout, stderr) => {
@@ -111,21 +117,32 @@ except Exception as e:
         RED.nodes.createNode(this, config);
         const node = this;
         
-        // Configuration
-        this.name = config.name;
-        this.takeScreenshot = config.takeScreenshot;
-        this.screenshotDelay = config.screenshotDelay || 1000;
-        this.url = config.url || 'https://google.com';
-
         this.on('input', async function(msg) {
             try {
+                // Resolve values in order: msg -> config -> defaults
+                const url = msg.url || config.url || '';
+                const screenshotDelay = msg.screenshotDelay || config.screenshotDelay || 1000;
+                const pythonPath = msg.pythonPath || config.pythonPath || 'python';
+                
+                // Validate URL
+                if (!url) {
+                    throw new Error('URL is required');
+                }
+                
+                // Basic URL validation
+                try {
+                    new URL(url);
+                } catch (e) {
+                    throw new Error(`Invalid URL: ${url}`);
+                }
+                
                 node.log('Starting Playwright automation...');
                 
-                // Execute the Playwright script with the configured parameters
+                // Execute the Playwright script to take a screenshot
                 const result = await executePlaywright(
-                    this.url,
-                    this.takeScreenshot,
-                    this.screenshotDelay
+                    pythonPath,
+                    url,
+                    screenshotDelay
                 );
                 
                 // Parse and send the result
@@ -138,16 +155,20 @@ except Exception as e:
                     
                     const parsedResult = JSON.parse(resultMatch[1].trim());
                     msg.payload = parsedResult;
+                    // Send to first output (success)
                     node.send([msg, null]);
                 } catch (e) {
                     console.error('Error parsing result:', e);
-                    console.error('Raw output:', result);
-                    throw new Error(`Failed to parse result: ${e.message}. Output: ${result}`);
+                    msg.payload = { error: 'Failed to parse result: ' + e.message };
+                    node.error(e, msg);
+                    // Send to second output (error)
+                    node.send([null, msg]);
                 }
-                
-            } catch (error) {
-                node.error('Playwright execution failed: ' + error.message, msg);
-                msg.error = error.message;
+            } catch (e) {
+                console.error('Error in Playwright automation:', e);
+                msg.payload = { error: e.message };
+                node.error(e, msg);
+                // Send to second output (error)
                 node.send([null, msg]);
             }
         });

@@ -23,6 +23,7 @@ A collection of Node-RED nodes for browser automation using [Playwright](https:/
 ### Prerequisites
 - Node.js 14 or later
 - Node-RED 2.0 or later
+- Python 3.7 or later (for virtual environment support)
 - Playwright browsers (will be installed automatically)
 
 ### Installation Methods
@@ -41,15 +42,171 @@ If you want the latest development version, you can install directly from GitHub
 npm install git+https://github.com/lesichkovm/node-red-contrib-playwright-automation.git
 ```
 
+### Python Virtual Environment Setup
+
+For better dependency management, it's recommended to use a Python virtual environment:
+
+1. **Create a virtual environment**:
+   ```bash
+   python -m venv venv
+   ```
+
+2. **Activate the virtual environment**:
+   - On Windows:
+     ```bash
+     .\venv\Scripts\activate
+     ```
+   - On macOS/Linux:
+     ```bash
+     source venv/bin/activate
+     ```
+
+3. **Install Python dependencies** (if any):
+   ```bash
+   pip install -r requirements.txt
+   ```
+
 ### Post-Installation
 After installation, restart Node-RED. You'll find the Playwright Automation nodes in the palette under the "Playwright Automation" category.
 
-### Browser Installation
-Playwright requires browser binaries to be installed. The first time you use the nodes, it will attempt to install the necessary browsers automatically. If you encounter any issues, you can manually install them by running:
+### Docker Support
 
-```bash
-npx playwright install
+If you're using Docker, the container is pre-configured with Python and virtual environment support. To add Python dependencies:
+
+1. Add them to `requirements.txt` in your project root
+2. Rebuild the Docker image
+
+The virtual environment is automatically activated in the container, and all Python scripts will use the isolated environment.
+
+### Browser Installation
+Playwright requires browser binaries to be installed. You can install them in one of two ways:
+
+1. **Recommended**: Add to your `requirements.txt`:
+   ```
+   playwright
+   ```
+   Then run:
+   ```bash
+   pip install -r requirements.txt
+   python -m playwright install
+   ```
+
+2. **Or** install directly:
+   ```bash
+   pip install playwright
+   python -m playwright install
+   ```
+
+This will install the Playwright package and download the required browser binaries.
+
+## Node-RED Integration
+
+### Node Configuration
+
+1. **Playwright Config Node**
+   - Configure your browser settings (Chromium, Firefox, or WebKit)
+   - Set headless mode and other browser options
+
+2. **Playwright Node**
+   - Connect to the config node
+   - Choose from available actions (navigate, click, fill, etc.)
+   - Configure selectors and values as needed
+
+### Example Flow
+
+1. **Inject** node → **Playwright** node → **Debug** node
+2. Configure the Playwright node to navigate to a URL
+3. Add more Playwright nodes for interactions (clicks, form filling, etc.)
+
+### Configuration
+
+1. Install the required package:
+   ```bash
+   pip install playwright
+   ```
+
+2. Generate `requirements.txt` using pip freeze:
+   ```bash
+   pip freeze > requirements.txt
+   ```
+
+3. Install the browsers:
+   ```bash
+   python -m playwright install
+   ```
+
+## Troubleshooting
+
+- **Browser doesn't start**:
+  - Ensure browsers are installed: `python -m playwright install`
+  - Check if DISPLAY is set for headful mode on Linux
+  
+- **Element not found**:
+  - Verify the page has loaded completely
+  - Use `page.wait_for_selector()` before interacting with elements
+  
+- **Timeout errors**:
+  - Increase timeouts: `page.wait_for_selector(..., timeout=10000)`
+  - Check for iframes that might contain your elements
+
+- **Docker issues**:
+  - Make sure to install system dependencies in your Dockerfile
+  - Use the official Playwright Docker image as a base for easier setup
+
+## Example Flows
+
+### Basic Navigation Flow
+1. Inject node → Python Function node → Debug node
+2. In Python Function node:
+```python
+def main(msg):
+    from playwright.sync_api import sync_playwright
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.goto('https://example.com')
+        
+        # Take a screenshot
+        screenshot = page.screenshot(type='png')
+        
+        browser.close()
+        
+        msg.payload = {
+            'screenshot': f"data:image/png;base64,{screenshot.decode('latin1')}",
+            'timestamp': str(datetime.utcnow())
+        }
+        return msg
 ```
+
+## Best Practices
+
+1. **Resource Management**:
+   - Always close browsers and pages when done
+   - Use context managers (`with` statements) when possible
+
+2. **Error Handling**:
+   - Wrap browser operations in try/except blocks
+   - Implement proper cleanup in finally blocks
+
+3. **Performance**:
+   - Reuse browser instances when possible
+   - Use async/await for concurrent operations
+   - Implement proper waiting strategies
+
+4. **Security**:
+   - Never hardcode credentials
+   - Use environment variables for sensitive data
+   - Keep Playwright and browsers updated
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Playwright](https://playwright.dev/) - Reliable end-to-end testing for modern web apps
+- [Node-RED](https://nodered.org/) - Low-code programming for event-driven applications
 
 ## Nodes
 

@@ -1,9 +1,9 @@
 <link rel="stylesheet" href="playwright/playwright.css" type="text/css">
 
 <script type="text/javascript">
-    // Register the config node in the 'playwright-automation' category
-    RED.nodes.registerType('playwright-automation-config', {
-        category: 'playwright-automation',
+    // Register the config node in the 'playwright' category
+    RED.nodes.registerType('playwright-config', {
+        category: 'playwright',
         paletteLabel: 'Playwright Automation Config',
         defaults: {
             name: { value: '' },
@@ -16,14 +16,14 @@
         }
     });
 
-    // Register the action node in the 'playwright-automation' category
-    RED.nodes.registerType('playwright-automation', {
-        category: 'playwright-automation',
+    // Register the action node in the 'playwright' category
+    RED.nodes.registerType('playwright', {
+        category: 'playwright',
         paletteLabel: 'Playwright Automation',
         color: '#a6bbcf',
         defaults: {
             name: { value: '' },
-            config: { type: 'playwright-automation-config', required: true },
+            config: { type: 'playwright-config', required: true },
             action: { value: 'navigate', required: true },
             selector: { value: '' },
             value: { value: '' },
@@ -80,7 +80,7 @@
     });
 </script>
 
-<script type="text/html" data-template-name="playwright-automation-config">
+<script type="text/html" data-template-name="playwright-config">
     <div class="form-row">
         <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-config-input-name" placeholder="Name">
@@ -105,7 +105,7 @@
     </div>
 </script>
 
-<script type="text/html" data-template-name="playwright-automation">
+<script type="text/html" data-template-name="playwright">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -148,7 +148,7 @@
     </div>
 </script>
 
-<script type="text/html" data-help-name="playwright-automation">
+<script type="text/html" data-help-name="playwright">
     <p>A node for browser automation using Playwright Automation.</p>
     <h3>Actions</h3>
     <ul>

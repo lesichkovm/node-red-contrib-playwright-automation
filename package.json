@@ -16,15 +16,8 @@
     "automation"
   ],
   "node-red": {
-    "version": ">=2.0.0",
     "nodes": {
-      "playwright-automation": "playwright/playwright.js",
-      "playwright-automation-config": "playwright/playwright.js"
-    },
-    "palette": {
-      "name": "playwright-automation",
-      "label": "Playwright Automation",
-      "color": "#a6bbcf"
+      "playwright": "playwright/playwright.js"
     }
   },
   "author": "",

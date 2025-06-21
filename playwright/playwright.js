@@ -50,7 +50,7 @@ module.exports = function(RED) {
         });
     }
 
-    RED.nodes.registerType("playwright-automation-config", PlaywrightConfigNode);
+    RED.nodes.registerType("playwright-config", PlaywrightConfigNode);
 
     // Action node
     function PlaywrightActionNode(config) {
@@ -130,5 +130,5 @@ module.exports = function(RED) {
         });
     }
 
-    RED.nodes.registerType("playwright-automation", PlaywrightActionNode);
+    RED.nodes.registerType("playwright", PlaywrightActionNode);
 }

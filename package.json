@@ -18,7 +18,7 @@
   ],
   "node-red": {
     "nodes": {
-      "playwright": "playwright/playwright.js",
+      "playwright": "playwright-automation/playwright-automation.js",
       "playwright-automation": "playwright-automation/playwright-automation.js"
     }
   },

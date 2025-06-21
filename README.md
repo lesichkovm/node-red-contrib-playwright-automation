@@ -1,20 +1,28 @@
-# Node-RED Playwright Screenshot Node
+# Node-RED Playwright Automation Nodes
 
-[![npm version](https://img.shields.io/npm/v/node-red-contrib-playwright-screenshot)](https://www.npmjs.com/package/node-red-contrib-playwright-screenshot)
-[![Downloads](https://img.shields.io/npm/dm/node-red-contrib-playwright-screenshot)](https://www.npmjs.com/package/node-red-contrib-playwright-screenshot)
+[![npm version](https://img.shields.io/npm/v/node-red-contrib-playwright-automation)](https://www.npmjs.com/package/node-red-contrib-playwright-automation)
+[![Downloads](https://img.shields.io/npm/dm/node-red-contrib-playwright-automation)](https://www.npmjs.com/package/node-red-contrib-playwright-automation)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub issues](https://img.shields.io/github/issues/lesichkovm/node-red-contrib-playwright-automation)](https://github.com/lesichkovm/node-red-contrib-playwright-automation/issues)
 [![GitHub stars](https://img.shields.io/github/stars/lesichkovm/node-red-contrib-playwright-automation)](https://github.com/lesichkovm/node-red-contrib-playwright-automation/stargazers)
 
-A Node-RED node for capturing website screenshots using [Playwright](https://playwright.dev/). This node provides a simple way to take full-page screenshots of websites directly from your Node-RED flows.
+A collection of Node-RED nodes for web automation using [Playwright](https://playwright.dev/). This package includes nodes for capturing website screenshots and generating PDFs directly from your Node-RED flows.
 
 ## Features
 
+### Screenshot Node
 - **High-Quality Screenshots**: Capture full-page screenshots in JPEG format
 - **Configurable Delay**: Wait for dynamic content to load before taking the screenshot
+
+### PDF Node
+- **PDF Generation**: Convert web pages to PDF with customizable options
+- **Page Options**: Set page size, margins, and orientation
+- **Headers/Footers**: Add custom header and footer templates
+- **Print Backgrounds**: Option to include background graphics
+
+### Common Features
 - **Flexible Python Environment**: Use system Python or specify a custom Python interpreter
 - **Error Handling**: Dual output ports for success and error handling
-- **Lightweight**: Focused on one task - taking screenshots efficiently
 ## Installation
 
 ### Prerequisites
@@ -25,10 +33,10 @@ A Node-RED node for capturing website screenshots using [Playwright](https://pla
 
 ### Installation
 
-1. Install the node in your Node-RED user directory (typically `~/.node-red`):
+1. Install the package in your Node-RED user directory (typically `~/.node-red`):
 
 ```bash
-npm install node-red-contrib-playwright-screenshot
+npm install node-red-contrib-playwright-automation
 ```
 
 2. Install Playwright and its dependencies:
@@ -43,56 +51,94 @@ python -m playwright install
 
 3. Restart Node-RED
 
-## Configuration
+## Nodes
 
-### Node Settings
+### Playwright Screenshot Node
 
-1. **URL to Screenshot** (required): The website URL to capture (e.g., https://example.com)
-2. **Delay Before Screenshot** (optional): Milliseconds to wait after page load before taking the screenshot (default: 1000ms)
-3. **Python Path** (optional): Path to Python interpreter (default: 'python')
+Capture full-page screenshots of websites.
+
+#### Configuration
+
+1. **URL** (required): The website URL to capture (e.g., https://example.com)
+2. **Delay (ms)**: Milliseconds to wait after page load before taking the screenshot (default: 1000ms)
+3. **Python Path**: Path to Python interpreter (default: 'python')
    - Can be a system command (e.g., 'python' or 'python3')
    - Can be a path to a virtual environment (e.g., 'venv/bin/python' or 'venv\\Scripts\\python.exe')
    - Can be a relative path (resolved from Node-RED's working directory)
 
-## Usage
+#### Inputs
+- **msg.url**: Override the URL from node configuration
+- **msg.screenshotDelay**: Override the delay in milliseconds
+- **msg.pythonPath**: Override the Python path
 
-### Inputs
-- First input: Trigger the screenshot capture
-- `msg.url`: Override the URL from node configuration
-- `msg.screenshotDelay`: Override the delay in milliseconds
-- `msg.pythonPath`: Override the Python path
+#### Outputs
+- **First output (success)**: Base64-encoded JPEG image data in `msg.payload`
+- **Second output (error)**: Error message in `msg.payload` if the screenshot fails
 
-### Outputs
-- **First output (success)**: Contains the screenshot data and page information
-  ```javascript
-  {
-    success: true,
-    url: 'https://example.com',
-    title: 'Example Domain',
-    screenshot: 'base64-encoded-jpeg-image'
-  }
-  ```
-- **Second output (error)**: Contains error information if the screenshot fails
-  ```javascript
-  {
-    error: 'Error message describing what went wrong'
-  }
-  ```
+### Playwright PDF Node
 
-### Example Flow
+Generate PDFs from web pages with customizable options.
 
-1. **Inject** node → **Playwright Screenshot** node → **Debug** node
-2. Configure the Playwright Screenshot node with your desired URL
-3. Connect the first output to a function node to handle the screenshot
-4. Connect the second output to a debug node to catch any errors
+#### Configuration
 
-Example Function Node to display the screenshot:
+1. **URL** (required): The website URL to convert to PDF
+2. **Wait Until**: When to consider navigation successful (load/domcontentloaded/networkidle/commit)
+3. **Page Format**: Paper format (A4, Letter, etc.)
+4. **Margin**: Page margins in JSON format (e.g., `{"top": "1cm", "right": "1cm", "bottom": "1cm", "left": "1cm"}`)
+5. **Print Background**: Whether to print background graphics
+6. **Display Header/Footer**: Show headers and footers
+7. **Header/Footer Template**: HTML template for headers/footers
+8. **Prefer CSS Page Size**: Use page size from CSS
+9. **Landscape**: Use landscape orientation
+10. **Python Path**: Path to Python interpreter (same as Screenshot node)
+
+#### Inputs
+- All configuration options can be overridden via `msg` properties
+- Example: `msg.url`, `msg.format`, `msg.margin`, etc.
+
+#### Outputs
+- **First output (success)**: Base64-encoded PDF data in `msg.payload`
+- **Second output (error)**: Error message in `msg.payload` if PDF generation fails
+
+## Example Flows
+
+### Screenshot Example
+
+1. **Inject** node → **Playwright Screenshot** node → **Function** node → **Debug** node
+2. Configure the Screenshot node with your desired URL
+3. Add a Function node with this code to display the image:
 
 ```javascript
 // Convert base64 to data URL
 msg.payload = {
-    topic: `Screenshot of ${msg.payload.url}`,
-    payload: `data:image/jpeg;base64,${msg.payload.screenshot}`
+    topic: 'Screenshot',
+    payload: `data:image/jpeg;base64,${msg.payload}`
+};
+return msg;
+```
+
+### PDF Example
+
+1. **Inject** node → **Playwright PDF** node → **File** node
+2. Configure the PDF node with your desired URL and options
+3. Set the File node to save the PDF:
+   - Filename: `pdfs/{{payload.title || 'document'}}.pdf`
+   - Action: "Create file"
+   - Make sure the `pdfs` directory exists
+
+### HTTP Response Example
+
+To serve a PDF as a download:
+
+1. **HTTP In** node → **Playwright PDF** node → **Function** node → **HTTP Response** node
+2. In the Function node:
+
+```javascript
+// Convert base64 to buffer
+msg.payload = Buffer.from(msg.payload, 'base64');
+msg.headers = {
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': 'attachment; filename=document.pdf'
 };
 return msg;
 ```
@@ -117,6 +163,7 @@ For better dependency management, it's recommended to use a Python virtual envir
    ```bash
    pip install playwright
    python -m playwright install
+   python -m playwright install-deps  # Install system dependencies (Linux only)
    ```
 
 3. **Use the virtual environment in Node-RED**:
@@ -125,33 +172,46 @@ For better dependency management, it's recommended to use a Python virtual envir
 
 ## Docker Support
 
-If you're using Docker, the container is pre-configured with Python and virtual environment support. To add Python dependencies:
+If you're using Docker, you'll need to ensure the container has all required dependencies:
 
-1. Add them to `requirements.txt` in your project root
-2. Rebuild the Docker image
+```Dockerfile
+# Example Dockerfile for Node-RED with Playwright
+FROM nodered/node-red:latest
 
-The virtual environment is automatically activated in the container, and all Python scripts will use the isolated environment.
+# Install Python and Playwright dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
-### Browser Installation
-Playwright requires browser binaries to be installed. You can install them in one of two ways:
+# Install Playwright and browsers
+RUN pip3 install playwright \
+    && playwright install \
+    && playwright install-deps
 
-1. **Recommended**: Add to your `requirements.txt`:
-   ```
-   playwright
-   ```
-   Then run:
-   ```bash
-   pip install -r requirements.txt
-   python -m playwright install
-   ```
+# Copy your Node-RED project files
+COPY . /data
 
-2. **Or** install directly:
-   ```bash
-   pip install playwright
-   python -m playwright install
-   ```
+# Install Node-RED dependencies
+RUN cd /data && npm install
+```
 
-This will install the Playwright package and download the required browser binaries.
+## Header/Footer Templates
+
+For the PDF node, you can use the following special classes in your header/footer templates:
+
+- `date`: The current date
+- `title`: The page title
+- `url`: The page URL
+- `pageNumber`: Current page number
+- `totalPages`: Total number of pages
+
+Example footer template:
+```html
+<div style="font-size: 10px; margin: 0 1cm; text-align: center; width: 100%;">
+    Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+</div>
+```
 
 ## Troubleshooting
 
@@ -160,15 +220,23 @@ This will install the Playwright package and download the required browser binar
 1. **Browser not found**
    - Ensure you've run `python -m playwright install`
    - Check that the Python environment has Playwright installed
+   - On Linux, install system dependencies with `python -m playwright install-deps`
 
-2. **Screenshot fails**
+2. **Screenshot/PDF generation fails**
    - Verify the URL is accessible from the Node-RED server
    - Increase the delay if the page has dynamic content
    - Check the second output for detailed error messages
+   - Ensure the page has finished loading (try increasing the delay)
 
 3. **Python not found**
    - Make sure Python is installed and in your system PATH
    - If using a virtual environment, provide the full path to the Python executable
+   - On Windows, use double backslashes or forward slashes in the path
+
+4. **PDF generation errors**
+   - Check that the margin format is valid JSON
+   - Verify header/footer templates are valid HTML
+   - Make sure the page format is one of the supported values (A4, Letter, etc.)
 
 ### Debugging
 
@@ -185,6 +253,11 @@ This will install the Playwright package and download the required browser binar
    ```bash
    python -c "import playwright; print('Playwright version:', playwright.__version__)"
    ```
+4. **Check browser installation**:
+   ```bash
+   python -m playwright install
+   python -m playwright install-deps  # Linux only
+   ```
 
 ## Development
 
@@ -197,7 +270,34 @@ To contribute to this project:
    ```
 3. Make your changes
 4. Test your changes
-5. Submit a pull request
+5. Update documentation if needed
+6. Submit a pull request
+
+### Testing
+
+1. Install test dependencies:
+   ```bash
+   npm install -D node-red-node-test-helper
+   ```
+
+2. Run tests:
+   ```bash
+   npm test
+   ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Playwright](https://playwright.dev/) for the amazing browser automation library
+- [Node-RED](https://nodered.org/) for the visual programming environment
+- All contributors who helped improve this project
+
+## Support
+
+If you find this project useful, please consider giving it a ⭐️ on GitHub!
 
 ## License
 

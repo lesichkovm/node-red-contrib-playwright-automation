@@ -1,4 +1,4 @@
-# Node-RED Playwright Automation Nodes
+# Node-RED Playwright Screenshot Node
 
 [![npm version](https://img.shields.io/npm/v/node-red-contrib-playwright-automation)](https://www.npmjs.com/package/node-red-contrib-playwright-automation)
 [![Downloads](https://img.shields.io/npm/dm/node-red-contrib-playwright-automation)](https://www.npmjs.com/package/node-red-contrib-playwright-automation)
@@ -6,70 +6,124 @@
 [![GitHub issues](https://img.shields.io/github/issues/lesichkovm/node-red-contrib-playwright-automation)](https://github.com/lesichkovm/node-red-contrib-playwright-automation/issues)
 [![GitHub stars](https://img.shields.io/github/stars/lesichkovm/node-red-contrib-playwright-automation)](https://github.com/lesichkovm/node-red-contrib-playwright-automation/stargazers)
 
-A collection of Node-RED nodes for browser automation using [Playwright](https://playwright.dev/). These nodes provide an easy way to automate browser interactions directly from your Node-RED flows.
+A Node-RED node for capturing website screenshots using [Playwright](https://playwright.dev/). This node provides a simple way to take full-page screenshots of websites directly from your Node-RED flows.
 
 ## Features
 
-- **Multiple Browsers**: Supports Chromium, Firefox, and WebKit
-- **Flexible Actions**: Navigate, click, fill forms, take screenshots, and evaluate JavaScript
-- **Configurable**: Control browser behavior with various options
-- **Headless/Headed**: Toggle between headless and visible browser modes
-- **Smart Waiting**: Built-in waiting for elements and navigation
-- **Screenshots**: Capture screenshots with configurable delay
-- **Error Handling**: Comprehensive error handling and logging
-
+- **High-Quality Screenshots**: Capture full-page screenshots in JPEG format
+- **Configurable Delay**: Wait for dynamic content to load before taking the screenshot
+- **Flexible Python Environment**: Use system Python or specify a custom Python interpreter
+- **Error Handling**: Dual output ports for success and error handling
+- **Lightweight**: Focused on one task - taking screenshots efficiently
 ## Installation
 
 ### Prerequisites
 - Node.js 14 or later
 - Node-RED 2.0 or later
-- Python 3.7 or later (for virtual environment support)
+- Python 3.7 or later
 - Playwright browsers (will be installed automatically)
 
-### Installation Methods
+### Installation
 
-#### Method 1: Install via npm (recommended)
-Run the following command in your Node-RED user directory (typically `~/.node-red`):
+1. Install the node in your Node-RED user directory (typically `~/.node-red`):
 
 ```bash
 npm install node-red-contrib-playwright-automation
 ```
 
-#### Method 2: Install from GitHub
-If you want the latest development version, you can install directly from GitHub:
+2. Install Playwright and its dependencies:
 
 ```bash
-npm install git+https://github.com/lesichkovm/node-red-contrib-playwright-automation.git
+# Install Playwright
+pip install playwright
+
+# Install browser binaries
+python -m playwright install
 ```
 
-### Python Virtual Environment Setup
+3. Restart Node-RED
+
+## Configuration
+
+### Node Settings
+
+1. **URL to Screenshot** (required): The website URL to capture (e.g., https://example.com)
+2. **Delay Before Screenshot** (optional): Milliseconds to wait after page load before taking the screenshot (default: 1000ms)
+3. **Python Path** (optional): Path to Python interpreter (default: 'python')
+   - Can be a system command (e.g., 'python' or 'python3')
+   - Can be a path to a virtual environment (e.g., 'venv/bin/python' or 'venv\\Scripts\\python.exe')
+   - Can be a relative path (resolved from Node-RED's working directory)
+
+## Usage
+
+### Inputs
+- First input: Trigger the screenshot capture
+- `msg.url`: Override the URL from node configuration
+- `msg.screenshotDelay`: Override the delay in milliseconds
+- `msg.pythonPath`: Override the Python path
+
+### Outputs
+- **First output (success)**: Contains the screenshot data and page information
+  ```javascript
+  {
+    success: true,
+    url: 'https://example.com',
+    title: 'Example Domain',
+    screenshot: 'base64-encoded-jpeg-image'
+  }
+  ```
+- **Second output (error)**: Contains error information if the screenshot fails
+  ```javascript
+  {
+    error: 'Error message describing what went wrong'
+  }
+  ```
+
+### Example Flow
+
+1. **Inject** node → **Playwright Screenshot** node → **Debug** node
+2. Configure the Playwright Screenshot node with your desired URL
+3. Connect the first output to a function node to handle the screenshot
+4. Connect the second output to a debug node to catch any errors
+
+Example Function Node to display the screenshot:
+
+```javascript
+// Convert base64 to data URL
+msg.payload = {
+    topic: `Screenshot of ${msg.payload.url}`,
+    payload: `data:image/jpeg;base64,${msg.payload.screenshot}`
+};
+return msg;
+```
+
+## Python Environment Setup
 
 For better dependency management, it's recommended to use a Python virtual environment:
 
-1. **Create a virtual environment**:
+1. **Create and activate a virtual environment**:
    ```bash
+   # Create
    python -m venv venv
+   
+   # Activate (Windows)
+   .\venv\Scripts\activate
+   
+   # Or activate (macOS/Linux)
+   # source venv/bin/activate
    ```
 
-2. **Activate the virtual environment**:
-   - On Windows:
-     ```bash
-     .\venv\Scripts\activate
-     ```
-   - On macOS/Linux:
-     ```bash
-     source venv/bin/activate
-     ```
-
-3. **Install Python dependencies** (if any):
+2. **Install Playwright**:
    ```bash
-   pip install -r requirements.txt
+   pip install playwright
+   python -m playwright install
    ```
 
-### Post-Installation
-After installation, restart Node-RED. You'll find the Playwright Automation nodes in the palette under the "Playwright Automation" category.
+3. **Use the virtual environment in Node-RED**:
+   - Set the Python Path in the node to your virtual environment's Python executable
+   - Example: `venv/Scripts/python` (Windows) or `venv/bin/python` (macOS/Linux)
 
-### Docker Support
+## Docker Support
 
 If you're using Docker, the container is pre-configured with Python and virtual environment support. To add Python dependencies:
 
@@ -99,41 +153,59 @@ Playwright requires browser binaries to be installed. You can install them in on
 
 This will install the Playwright package and download the required browser binaries.
 
-## Node-RED Integration
+## Troubleshooting
 
-### Node Configuration
+### Common Issues
 
-1. **Playwright Config Node**
-   - Configure your browser settings (Chromium, Firefox, or WebKit)
-   - Set headless mode and other browser options
+1. **Browser not found**
+   - Ensure you've run `python -m playwright install`
+   - Check that the Python environment has Playwright installed
 
-2. **Playwright Node**
-   - Connect to the config node
-   - Choose from available actions (navigate, click, fill, etc.)
-   - Configure selectors and values as needed
+2. **Screenshot fails**
+   - Verify the URL is accessible from the Node-RED server
+   - Increase the delay if the page has dynamic content
+   - Check the second output for detailed error messages
 
-### Example Flow
+3. **Python not found**
+   - Make sure Python is installed and in your system PATH
+   - If using a virtual environment, provide the full path to the Python executable
 
-1. **Inject** node → **Playwright** node → **Debug** node
-2. Configure the Playwright node to navigate to a URL
-3. Add more Playwright nodes for interactions (clicks, form filling, etc.)
+### Debugging
 
-### Configuration
-
-1. Install the required package:
+1. **Check Node-RED logs** for error messages
+2. **Enable verbose logging** by adding this to your `settings.js`:
+   ```javascript
+   logging: {
+       console: {
+           level: "debug"
+       }
+   }
+   ```
+3. **Test Python manually** by running:
    ```bash
-   pip install playwright
+   python -c "import playwright; print('Playwright version:', playwright.__version__)"
    ```
 
-2. Generate `requirements.txt` using pip freeze:
-   ```bash
-   pip freeze > requirements.txt
-   ```
+## Development
 
-3. Install the browsers:
+To contribute to this project:
+
+1. Fork the repository
+2. Install dependencies:
    ```bash
-   python -m playwright install
+   npm install
    ```
+3. Make your changes
+4. Test your changes
+5. Submit a pull request
+
+## License
+
+MIT - See [LICENSE](LICENSE) for more information.
+
+## Support
+
+For support, please [open an issue](https://github.com/lesichkovm/node-red-contrib-playwright-automation/issues) on GitHub.
 
 ## Troubleshooting
 

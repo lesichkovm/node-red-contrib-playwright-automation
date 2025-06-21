@@ -39,18 +39,8 @@ async def main():
             # Get page title
             title = await page.title()
             
-            # Prepare result
-            result = {
-                'success': True,
-                'url': '${url}',
-                'title': title,
-                'screenshot': screenshot_data
-            }
-            
-            # Print result between markers for parsing
-            print('__PLAYWRIGHT_RESULT_START__')
-            print(json.dumps(result))
-            print('__PLAYWRIGHT_RESULT_END__')
+            # Print the base64-encoded image data between markers
+            print('__PLAYWRIGHT_RESULT_START__' + screenshot_data + '__PLAYWRIGHT_RESULT_END__')
             
         except Exception as e:
             print(f"Error: {str(e)}", file=sys.stderr)
@@ -147,15 +137,16 @@ if __name__ == "__main__":
                 
                 // Parse and send the result
                 try {
-                    // Extract the JSON result from between the markers
-                    const resultMatch = result.match(/__PLAYWRIGHT_RESULT_START__\s*([\s\S]*?)\s*__PLAYWRIGHT_RESULT_END__/);
+                    // Extract the result between markers
+                    const resultMatch = result.match(/__PLAYWRIGHT_RESULT_START__([\s\S]*?)__PLAYWRIGHT_RESULT_END__/);
                     if (!resultMatch) {
-                        throw new Error('Could not find result in output. Full output: ' + result);
+                        throw new Error('Could not find result in output.');
                     }
+
+                    const imageData = resultMatch[1].trim();
                     
-                    const parsedResult = JSON.parse(resultMatch[1].trim());
-                    msg.payload = parsedResult;
-                    // Send to first output (success)
+                    // On success, the content is the base64-encoded image
+                    msg.payload = imageData;
                     node.send([msg, null]);
                 } catch (e) {
                     console.error('Error parsing result:', e);

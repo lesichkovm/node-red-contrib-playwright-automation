@@ -57,14 +57,43 @@ if __name__ == "__main__":
                 // Write the script to a temporary file
                 fs.writeFileSync(tempFile, scriptContent);
                 
-                // Handle paths - convert to absolute if relative, and normalize slashes
-                const path = require('path');
-                const isRelativePath = !path.isAbsolute(pythonPath);
-                const resolvedPath = isRelativePath 
-                    ? path.resolve(process.cwd(), pythonPath)
-                    : pythonPath;
-                const normalizedPath = resolvedPath.replace(/\//g, '\\\\');
-                const command = `"${normalizedPath}" "${tempFile}"`;
+                // Handle Python path resolution for virtual environments
+                let pythonExecutable = pythonPath;
+                
+                // If the path is a directory (virtual environment), determine the correct Python executable
+                try {
+                    const stats = fs.statSync(pythonPath);
+                    if (stats.isDirectory()) {
+                        // Check for virtual environment structure
+                        const isWindows = os.platform() === 'win32';
+                        const pythonBinDir = isWindows ? 'Scripts' : 'bin';
+                        const pythonExe = isWindows ? 'python.exe' : 'python';
+                        
+                        const potentialPythonPath = path.join(pythonPath, pythonBinDir, pythonExe);
+                        
+                        if (fs.existsSync(potentialPythonPath)) {
+                            pythonExecutable = potentialPythonPath;
+                        } else {
+                            console.warn(`Could not find Python executable in ${potentialPythonPath}, using default: ${pythonPath}`);
+                        }
+                    }
+                } catch (e) {
+                    console.log(`Using Python path as is (${pythonPath}): ${e.message}`);
+                }
+                
+                // Convert to absolute path if relative
+                if (!path.isAbsolute(pythonExecutable)) {
+                    pythonExecutable = path.resolve(process.cwd(), pythonExecutable);
+                }
+                
+                // Normalize path separators for the current platform
+                pythonExecutable = pythonExecutable.replace(/[\\/]+/g, path.sep);
+                
+                // Handle spaces in path by properly escaping
+                const escapedPythonPath = `"${pythonExecutable.replace(/"/g, '\"')}"`;
+                const escapedScriptPath = `"${tempFile.replace(/"/g, '\"')}"`;
+                
+                const command = `${escapedPythonPath} ${escapedScriptPath}`;
                 console.log('Executing command:', command);
                 
                 exec(command, { timeout: 60000 }, (error, stdout, stderr) => {

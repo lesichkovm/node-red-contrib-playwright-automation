@@ -167,8 +167,9 @@ For better dependency management, it's recommended to use a Python virtual envir
    ```
 
 3. **Use the virtual environment in Node-RED**:
-   - Set the Python Path in the node to your virtual environment's Python executable
-   - Example: `venv/Scripts/python` (Windows) or `venv/bin/python` (macOS/Linux)
+   - Set the Python Path in the node to the directory containing your virtual environment
+   - The node will automatically use the correct Python executable path based on your operating system
+   - Example: `./venv` (relative to your Node-RED user directory) or `/path/to/venv` (absolute path)
 
 ## Docker Support
 

@@ -90,14 +90,43 @@ if __name__ == '__main__':
 
         fs.writeFileSync(tempFile, scriptContent);
 
-        // Normalize python path for Windows
-        const normalizedPythonPath = path.normalize(pythonPath).replace(/\\/g, '\\\\');
+        // Handle Python path resolution for virtual environments
+        let pythonExecutable = pythonPath;
+        
+        // If the path is a directory (virtual environment), determine the correct Python executable
+        try {
+            const stats = fs.statSync(pythonPath);
+            if (stats.isDirectory()) {
+                // Check for virtual environment structure
+                const isWindows = os.platform() === 'win32';
+                const pythonBinDir = isWindows ? 'Scripts' : 'bin';
+                const pythonExe = isWindows ? 'python.exe' : 'python';
+                
+                const potentialPythonPath = path.join(pythonPath, pythonBinDir, pythonExe);
+                
+                if (fs.existsSync(potentialPythonPath)) {
+                    pythonExecutable = potentialPythonPath;
+                    console.log(`Using Python executable from virtual environment: ${pythonExecutable}`);
+                } else {
+                    console.warn(`Could not find Python executable in ${potentialPythonPath}, using default: ${pythonPath}`);
+                }
+            }
+        } catch (e) {
+            console.log(`Using Python path as is (${pythonPath}): ${e.message}`);
+        }
+        
+        // Convert to absolute path if relative
+        if (!path.isAbsolute(pythonExecutable)) {
+            pythonExecutable = path.resolve(process.cwd(), pythonExecutable);
+        }
+        
+        // Normalize path separators for the current platform
+        pythonExecutable = pythonExecutable.replace(/[\\/]+/g, path.sep);
         
         // Execute the script
-        const pythonProcess = spawn(`"${normalizedPythonPath}"`, [tempFile], {
-            shell: true,
-            stdio: ['pipe', 'pipe', 'pipe'],
-            windowsVerbatimArguments: true
+        console.log(`Executing Python script with: ${pythonExecutable}`);
+        const pythonProcess = spawn(pythonExecutable, [tempFile], {
+            stdio: ['pipe', 'pipe', 'pipe']
         });
 
         let output = '';

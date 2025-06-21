@@ -29,16 +29,20 @@
     <!-- START: Python Path -->
     <div class="form-row">
         <label for="node-input-pythonPath">
-            <i class="fa fa-code"></i> Python
+            <i class="fa fa-code"></i> Python Virtual Environment
         </label>
-        <input type="text" id="node-input-pythonPath" placeholder="e.g., python, python3, or path to python" style="width: 70%;">
+        <input type="text" id="node-input-pythonPath" placeholder="e.g., python, python3, or path to venv" style="width: 70%;">
         <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
-            Path to Python Interpreter with Playwright Installed<br>
+            Path to Python Virtual Environment or Python Executable<br>
             Examples:<br>
-            - Just 'python' or 'python3' to use system Python<br>
-            - Windows: 'venv/Scripts/python' or 'C:\\path\\to\\venv\\Scripts\\python.exe'<br>
-            - Linux/macOS: 'venv/bin/python' or '/path/to/venv/bin/python'<br>
-            - Relative paths are resolved from Node-RED's working directory
+            - 'python' or 'python3' to use system Python<br>
+            - Path to virtual environment directory (recommended):<br>
+              - './venv' (relative to Node-RED directory)<br>
+              - '/path/to/venv' (absolute path)<br>
+            - Or direct path to Python executable:<br>
+              - Windows: 'venv/Scripts/python.exe'<br>
+              - Linux/macOS: 'venv/bin/python'<br>
+            Relative paths are resolved from Node-RED's working directory
         </div>
     </div>
     <!-- END: Python Path -->

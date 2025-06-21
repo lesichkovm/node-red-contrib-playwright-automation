@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-playwright-automation",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Node-RED nodes for browser automation with Playwright",
   "main": "index.js",
   "files": [

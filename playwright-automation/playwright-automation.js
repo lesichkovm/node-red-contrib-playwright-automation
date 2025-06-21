@@ -1,109 +1,151 @@
 module.exports = function(RED) {
-    let playwright;
-    
-    // Lazy load Playwright with better error reporting
-    function getPlaywright() {
-        if (!playwright) {
-            const pathsToTry = [
-                'playwright',
-                __dirname + '/node_modules/playwright',
-                __dirname + '/../../node_modules/playwright',
-                process.cwd() + '/node_modules/playwright'
-            ];
+    // Function to execute Playwright script using Python
+    function executePlaywright(url, takeScreenshot, screenshotDelay) {
+        const { exec } = require('child_process');
+        const path = require('path');
+        const fs = require('fs');
+        const os = require('os');
+
+        return new Promise((resolve, reject) => {
+            // Create a temporary Python script
+            const tempFile = path.join(os.tmpdir(), `playwright-script-${Date.now()}.py`);
             
-            for (const path of pathsToTry) {
-                try {
-                    playwright = require(path);
-                    console.log(`Successfully loaded Playwright from: ${path}`);
-                    return playwright;
-                } catch (e) {
-                    console.log(`Failed to load Playwright from ${path}:`, e.message);
-                }
-            }
-            
-            throw new Error(`Failed to load Playwright. Tried paths: ${pathsToTry.join(', ')}. ` +
-                          `Make sure Playwright is installed in your Node-RED environment. ` +
-                          `Run 'npm install playwright' in your Node-RED user directory.`);
+            try {
+                // Escape the URL for Python string
+                const escapedUrl = url.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                
+                // Create the Python script
+                const scriptContent = `
+from playwright.sync_api import sync_playwright
+import json
+import sys
+
+try:
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
+        context = browser.new_context()
+        page = context.new_page()
+        
+        # Navigate to the URL
+        page.goto('${escapedUrl}', wait_until='networkidle')
+        print('Successfully navigated to: ${escapedUrl}')
+        
+        # Add delay if screenshot is enabled
+        if ${takeScreenshot}:
+            page.wait_for_timeout(${screenshotDelay})
+        
+        # Take screenshot if enabled
+        screenshot = None
+        if ${takeScreenshot}:
+            screenshot = page.screenshot(full_page=True, encoding='base64')
+        
+        # Prepare result
+        result = {
+            'success': True,
+            'url': '${escapedUrl}',
+            'title': page.title(),
+            'screenshot': screenshot
         }
-        return playwright;
+        
+        # Output the result as JSON
+        print('__PLAYWRIGHT_RESULT_START__')
+        print(json.dumps(result))
+        print('__PLAYWRIGHT_RESULT_END__')
+        
+        browser.close()
+        
+except Exception as e:
+    print('__PLAYWRIGHT_ERROR_START__')
+    print(str(e))
+    print('__PLAYWRIGHT_ERROR_END__')
+    sys.exit(1)
+`;
+                
+                // Write the script to a temporary file
+                fs.writeFileSync(tempFile, scriptContent);
+                
+                // Execute the Python script
+                const command = `python "${tempFile}"`;
+                console.log('Executing command:', command);
+                
+                exec(command, { timeout: 60000 }, (error, stdout, stderr) => {
+                    // Clean up the temporary file
+                    try { 
+                        fs.unlinkSync(tempFile); 
+                        console.log('Temporary file cleaned up');
+                    } catch (e) {
+                        console.error('Error cleaning up temp file:', e);
+                    }
+                    
+                    if (error) {
+                        // Check for error in stdout/stderr
+                        const errorMatch = stdout && stdout.match(/__PLAYWRIGHT_ERROR_START__\s*([\s\S]*?)\s*__PLAYWRIGHT_ERROR_END__/);
+                        const errorMessage = errorMatch ? errorMatch[1].trim() : (error.message || stderr || 'Unknown error');
+                        
+                        console.error('Playwright execution error:', {
+                            error: errorMessage,
+                            code: error.code,
+                            signal: error.signal,
+                            cmd: error.cmd,
+                            stdout: stdout,
+                            stderr: stderr
+                        });
+                        
+                        return reject(new Error(`Playwright execution failed: ${errorMessage}`));
+                    }
+                    
+                    resolve(stdout);
+                });
+            } catch (error) {
+                // Clean up the temporary file if it exists
+                try { fs.unlinkSync(tempFile); } catch (e) {}
+                reject(error);
+            }
+        });
     }
+
     function PlaywrightAutomationNode(config) {
         RED.nodes.createNode(this, config);
-        var node = this;
+        const node = this;
         
-        // Store the node configuration
+        // Configuration
         this.name = config.name;
         this.takeScreenshot = config.takeScreenshot;
         this.screenshotDelay = config.screenshotDelay || 1000;
-        
-        // Log configuration
-        this.log(`Playwright Automation node initialized - Take Screenshot: ${this.takeScreenshot}, Delay: ${this.screenshotDelay}ms`);
-        
-        // Handle incoming messages
-        this.on('input', function(msg) {
-            node.log('Received message: ' + JSON.stringify(msg));
-            // Use a self-executing async function to handle async/await
-            (async () => {
-                let browser = null;
-                let page = null;
+        this.url = config.url || 'https://google.com';
+
+        this.on('input', async function(msg) {
+            try {
+                node.log('Starting Playwright automation...');
                 
+                // Call the Python-based Playwright executor
+                const scriptContent = ''; // Not used in Python implementation
+
+                // Execute the script
+                const result = await executePlaywright(scriptContent);
+                
+                // Parse and send the result
                 try {
-                    node.log('Loading Playwright...');
-                    const { chromium } = getPlaywright();
-                    node.log('Playwright loaded successfully');
-                
-                    // Initialize browser
-                    browser = await chromium.launch({ 
-                        headless: true,
-                        args: ['--no-sandbox', '--disable-setuid-sandbox']
-                    });
-                    const context = await browser.newContext();
-                    page = await context.newPage();
-                    
-                    // Navigate to Google
-                    await page.goto('https://google.com', { waitUntil: 'networkidle' });
-                    node.log('Successfully navigated to Google');
-                    
-                    // Process the message with Playwright Automation
-                    let result = {
-                        originalPayload: msg.payload,
-                        config: {
-                            takeScreenshot: node.takeScreenshot,
-                            screenshotDelay: node.screenshotDelay
-                        },
-                        processedAt: new Date().toISOString(),
-                        browserInitialized: true
-                    };
-                    
-                    msg.payload = result;
-                    
-                    // Send the message to the next node
-                    node.send(msg);
-                    
-                    // Log to the debug tab
-                    node.log(`Message processed with config: ${JSON.stringify(result.config)}`);
-                    
-                } catch (error) {
-                    const errorMsg = "Error in browser automation: " + (error.stack || error.message);
-                    node.error(errorMsg, msg);
-                    msg.error = errorMsg;
-                    node.send([null, msg]); // Send error to second output if available
-                } finally {
-                    try {
-                        // Close the browser if it was opened
-                        if (page) {
-                            node.log('Closing page...');
-                            await page.close().catch(e => node.error('Error closing page: ' + e.message));
-                        }
-                        if (browser) {
-                            node.log('Closing browser...');
-                            await browser.close().catch(e => node.error('Error closing browser: ' + e.message));
-                        }
-                    } catch (e) {
-                        node.error('Error during cleanup: ' + e.message);
+                    // Extract the JSON result from between the markers
+                    const resultMatch = result.match(/__PLAYWRIGHT_RESULT_START__\s*([\s\S]*?)\s*__PLAYWRIGHT_RESULT_END__/);
+                    if (!resultMatch) {
+                        throw new Error('Could not find result in output. Full output: ' + result);
                     }
+                    
+                    const parsedResult = JSON.parse(resultMatch[1].trim());
+                    msg.payload = parsedResult;
+                    node.send([msg, null]);
+                } catch (e) {
+                    console.error('Error parsing result:', e);
+                    console.error('Raw output:', result);
+                    throw new Error(`Failed to parse result: ${e.message}. Output: ${result}`);
                 }
-            })();
+                
+            } catch (error) {
+                node.error('Playwright execution failed: ' + error.message, msg);
+                msg.error = error.message;
+                node.send([null, msg]);
+            }
         });
         
         // Clean up when node is removed

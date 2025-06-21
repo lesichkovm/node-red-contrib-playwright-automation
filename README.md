@@ -1,7 +1,7 @@
 # Node-RED Playwright Screenshot Node
 
-[![npm version](https://img.shields.io/npm/v/node-red-contrib-playwright-automation)](https://www.npmjs.com/package/node-red-contrib-playwright-automation)
-[![Downloads](https://img.shields.io/npm/dm/node-red-contrib-playwright-automation)](https://www.npmjs.com/package/node-red-contrib-playwright-automation)
+[![npm version](https://img.shields.io/npm/v/node-red-contrib-playwright-screenshot)](https://www.npmjs.com/package/node-red-contrib-playwright-screenshot)
+[![Downloads](https://img.shields.io/npm/dm/node-red-contrib-playwright-screenshot)](https://www.npmjs.com/package/node-red-contrib-playwright-screenshot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub issues](https://img.shields.io/github/issues/lesichkovm/node-red-contrib-playwright-automation)](https://github.com/lesichkovm/node-red-contrib-playwright-automation/issues)
 [![GitHub stars](https://img.shields.io/github/stars/lesichkovm/node-red-contrib-playwright-automation)](https://github.com/lesichkovm/node-red-contrib-playwright-automation/stargazers)
@@ -28,7 +28,7 @@ A Node-RED node for capturing website screenshots using [Playwright](https://pla
 1. Install the node in your Node-RED user directory (typically `~/.node-red`):
 
 ```bash
-npm install node-red-contrib-playwright-automation
+npm install node-red-contrib-playwright-screenshot
 ```
 
 2. Install Playwright and its dependencies:
@@ -205,7 +205,7 @@ MIT - See [LICENSE](LICENSE) for more information.
 
 ## Support
 
-For support, please [open an issue](https://github.com/lesichkovm/node-red-contrib-playwright-automation/issues) on GitHub.
+For support, please [open an issue](https://github.com/lesichkovm/node-red-contrib-playwright-screenshot/issues) on GitHub.
 
 ## Troubleshooting
 

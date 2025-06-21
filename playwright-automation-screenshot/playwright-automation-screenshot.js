@@ -180,5 +180,5 @@ if __name__ == "__main__":
     }
     
     // Register the node with Node-RED
-    RED.nodes.registerType("playwright-automation", PlaywrightAutomationNode);
+    RED.nodes.registerType("playwright-automation-screenshot", PlaywrightAutomationNode);
 }

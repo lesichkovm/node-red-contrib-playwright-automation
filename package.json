@@ -4,7 +4,8 @@
   "description": "Node-RED nodes for browser automation with Playwright",
   "main": "index.js",
   "files": [
-    "playwright-automation/*"
+    "playwright-automation-screenshot/*",
+    "playwright-automation-pdf/*"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -16,8 +17,10 @@
     "automation"
   ],
   "node-red": {
+    "version": ">=2.0.0",
     "nodes": {
-      "playwright-automation": "playwright-automation/playwright-automation.js"
+      "playwright-automation-screenshot": "playwright-automation-screenshot/playwright-automation-screenshot.js",
+      "playwright-automation-pdf": "playwright-automation-pdf/playwright-automation-pdf.js"
     }
   },
   "author": "",

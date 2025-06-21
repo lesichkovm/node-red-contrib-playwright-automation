@@ -1,5 +1,5 @@
 <script type="text/javascript">
-    RED.nodes.registerType('playwright-automation', {
+    RED.nodes.registerType('playwright-automation-screenshot', {
         category: 'function',
         color: '#a6bbcf',
         defaults: {
@@ -13,12 +13,12 @@
         outputs: 2,  // First output: success, Second output: error
         icon: 'font-awesome/fa-star',
         label: function() {
-            return this.name || 'playwright-automation';
+            return this.name || 'playwright-automation-screenshot';
         }
     });
 </script>
 
-<script type="text/html" data-template-name="playwright-automation">
+<script type="text/html" data-template-name="playwright-automation-screenshot">
     <!-- START: Name -->
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
@@ -26,25 +26,14 @@
     </div>
     <!-- END: Name -->
     
-    <!-- START: URL -->
-    <div class="form-row">
-        <label for="node-input-url"><i class="fa fa-globe"></i> URL to Screenshot</label>
-        <input type="text" id="node-input-url" placeholder="https://example.com" style="width: 70%;">
-    </div>
-    <!-- END: URL -->
-    
-    <!-- START: Screenshot Delay -->
-    <div class="form-row">
-        <label for="node-input-screenshotDelay"><i class="fa fa-clock-o"></i> Delay Before Screenshot (ms)</label>
-        <input type="number" id="node-input-screenshotDelay" placeholder="1000" min="0" step="100" style="width: 70px;">
-    </div>
-    <!-- END: Screenshot Delay -->
-    
     <!-- START: Python Path -->
     <div class="form-row">
-        <label for="node-input-pythonPath"><i class="fa fa-terminal"></i> Python Path</label>
+        <label for="node-input-pythonPath">
+            <i class="fa fa-code"></i> Python
+        </label>
         <input type="text" id="node-input-pythonPath" placeholder="e.g., python, python3, or path to python" style="width: 70%;">
         <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+            Path to Python Interpreter with Playwright Installed<br>
             Examples:<br>
             - Just 'python' or 'python3' to use system Python<br>
             - Windows: 'venv/Scripts/python' or 'C:\\path\\to\\venv\\Scripts\\python.exe'<br>
@@ -53,9 +42,29 @@
         </div>
     </div>
     <!-- END: Python Path -->
+    
+    <!-- START: URL -->
+    <div class="form-row">
+        <label for="node-input-url"><i class="fa fa-globe"></i> URL</label>
+        <input type="text" id="node-input-url" placeholder="https://example.com" style="width: 70%;">
+        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+            URL to Screenshot
+        </div>
+    </div>
+    <!-- END: URL -->
+    
+    <!-- START: Screenshot Delay -->
+    <div class="form-row">
+        <label for="node-input-screenshotDelay"><i class="fa fa-clock-o"></i> Delay (ms)</label>
+        <input type="number" id="node-input-screenshotDelay" placeholder="1000" min="0" step="100" style="width: 70px;">
+        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+            Delay Before Screenshot (ms)
+        </div>
+    </div>
+    <!-- END: Screenshot Delay -->
 </script>
 
-<script type="text/html" data-help-name="playwright-automation">
+<script type="text/html" data-help-name="playwright-automation-screenshot">
     <p>A Node-RED node for taking website screenshots using Playwright.</p>
     <p>Options:</p>
     <ul>

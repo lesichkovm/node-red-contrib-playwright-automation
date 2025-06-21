@@ -1,0 +1,181 @@
+<script type="text/javascript">
+    RED.nodes.registerType('playwright-automation-pdf', {
+        category: 'function',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: '' },
+            url: { value: 'https://google.com' },
+            pythonPath: { value: 'python' },
+            waitUntil: { value: 'load' },
+            format: { value: 'A4' },
+            margin: { value: '{}' },
+            printBackground: { value: true },
+            displayHeaderFooter: { value: false },
+            headerTemplate: { value: '' },
+            footerTemplate: { 
+                value: '<div style="font-size: 10px; margin: 0 1cm; text-align: center; width: 100%;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>' 
+            },
+            preferCSSPageSize: { value: false },
+            landscape: { value: false }
+        },
+        inputs: 1,
+        outputs: 2,  // First output: success, Second output: error
+        icon: 'font-awesome/fa-file-pdf-o',
+        label: function() {
+            return this.name || 'playwright-automation-pdf';
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="playwright-automation-pdf">
+    <!-- START: Name -->
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <!-- END: Name -->
+
+    <!-- START: Python Path -->
+    <div class="form-row">
+        <label for="node-input-pythonPath">
+            <i class="fa fa-code"></i> Python
+        </label>
+        <input type="text" id="node-input-pythonPath" placeholder="e.g., python, python3, or path to python" style="width: 70%;">
+        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+            Path to Python Interpreter with Playwright Installed<br>
+            Examples:<br>
+            - Just 'python' or 'python3' to use system Python<br>
+            - Windows: 'venv/Scripts/python' or 'C:\\path\\to\\venv\\Scripts\\python.exe'<br>
+            - Linux/macOS: 'venv/bin/python' or '/path/to/venv/bin/python'<br>
+            - Relative paths are resolved from Node-RED's working directory
+        </div>
+    </div>
+    <!-- END: Python Path -->
+
+    <!-- START: URL -->
+    <div class="form-row">
+        <label for="node-input-url"><i class="fa fa-globe"></i> URL</label>
+        <input type="text" id="node-input-url" placeholder="https://example.com" style="width: 70%;">
+        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+            URL to convert to PDF
+        </div>
+    </div>
+    <!-- END: URL -->
+
+    <!-- START: Wait Until -->
+    <div class="form-row">
+        <label for="node-input-waitUntil"><i class="fa fa-clock-o"></i> Wait Until</label>
+        <select id="node-input-waitUntil" style="width: 70%;">
+            <option value="load">Page Load (default)</option>
+            <option value="domcontentloaded">DOM Content Loaded</option>
+            <option value="networkidle">Network Idle</option>
+            <option value="commit">Commit</option>
+        </select>
+        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+            When to consider navigation successful
+        </div>
+    </div>
+    <!-- END: Wait Until -->
+
+    <!-- START: Page Format -->
+    <div class="form-row">
+        <label for="node-input-format"><i class="fa fa-arrows-alt"></i> Page Format</label>
+        <select id="node-input-format" style="width: 70%;">
+            <option value="Letter">Letter (8.5in x 11in)</option>
+            <option value="Legal">Legal (8.5in x 14in)</option>
+            <option value="Tabloid">Tabloid (11in x 17in)</option>
+            <option value="Ledger">Ledger (17in x 11in)</option>
+            <option value="A0">A0 (33.1in x 46.8in)</option>
+            <option value="A1">A1 (23.4in x 33.1in)</option>
+            <option value="A2">A2 (16.5in x 23.4in)</option>
+            <option value="A3">A3 (11.7in x 16.5in)</option>
+            <option value="A4" selected>A4 (8.27in x 11.7in)</option>
+            <option value="A5">A5 (5.83in x 8.27in)</option>
+            <option value="A6">A6 (4.13in x 5.83in)</option>
+        </select>
+    </div>
+    <!-- END: Page Format -->
+
+    <!-- START: Margin -->
+    <div class="form-row">
+        <label for="node-input-margin"><i class="fa fa-arrows"></i> Margin</label>
+        <input type="text" id="node-input-margin" value="{}" placeholder='{"top": "1cm", "right": "1cm", "bottom": "1cm", "left": "1cm"}'>
+        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+            Page margins in JSON format<br>
+            Example: <code>{"top": "1cm", "right": "1cm", "bottom": "1cm", "left": "1cm"}</code>
+        </div>
+    </div>
+    <!-- END: Margin -->
+
+    <!-- START: Checkbox Options -->
+    <div class="form-row">
+        <label for="node-input-printBackground">
+            <input type="checkbox" id="node-input-printBackground" checked>
+            Print Background
+        </label>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-displayHeaderFooter">
+            <input type="checkbox" id="node-input-displayHeaderFooter">
+            Display Header/Footer
+        </label>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-preferCSSPageSize">
+            <input type="checkbox" id="node-input-preferCSSPageSize">
+            Prefer CSS Page Size
+        </label>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-landscape">
+            <input type="checkbox" id="node-input-landscape">
+            Landscape Orientation
+        </label>
+    </div>
+    <!-- END: Checkbox Options -->
+
+    <!-- START: Header Template -->
+    <div class="form-row">
+        <label for="node-input-headerTemplate"><i class="fa fa-header"></i> Header Template</label>
+        <textarea id="node-input-headerTemplate" rows="2" placeholder='<div style="font-size: 10px; margin: 0 1cm;">Header</div>'></textarea>
+        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+            HTML template for the header. Use classes: <code>pageNumber</code>, <code>totalPages</code>, <code>url</code>, <code>title</code>, <code>date</code>
+        </div>
+    </div>
+    <!-- END: Header Template -->
+
+    <!-- START: Footer Template -->
+    <div class="form-row">
+        <label for="node-input-footerTemplate"><i class="fa fa-window-minimize"></i> Footer Template</label>
+        <textarea id="node-input-footerTemplate" rows="2" placeholder='<div style="font-size: 10px; margin: 0 1cm; text-align: center; width: 100%;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>'></textarea>
+        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+            HTML template for the footer. Use classes: <code>pageNumber</code>, <code>totalPages</code>, <code>url</code>, <code>title</code>, <code>date</code>
+        </div>
+    </div>
+    <!-- END: Footer Template -->
+</script>
+
+<script type="text/html" data-help-name="playwright-automation-pdf">
+    <p>A Node-RED node for generating PDFs from web pages using Playwright.</p>
+    <p>Options:</p>
+    <ul>
+        <li><b>Python Interpreter Path</b>: Path to Python executable with Playwright installed.</li>
+        <li><b>URL</b>: The web page URL to convert to PDF.</li>
+        <li><b>Wait Until</b>: When to consider navigation successful.</li>
+        <li><b>Page Format</b>: Paper format for the PDF.</li>
+        <li><b>Margin</b>: Paper margins in JSON format.</li>
+        <li><b>Print Background</b>: Whether to print background graphics.</li>
+        <li><b>Display Header/Footer</b>: Whether to show header and footer.</li>
+        <li><b>Header/Footer Templates</b>: HTML templates for header and footer.</li>
+        <li><b>Prefer CSS Page Size</b>: Whether to use page size defined in CSS.</li>
+        <li><b>Landscape</b>: Paper orientation.</li>
+    </ul>
+    <p>Outputs:</p>
+    <ul>
+        <li><b>First output</b>: Success - Contains the PDF buffer and metadata.</li>
+        <li><b>Second output</b>: Error - If PDF generation fails.</li>
+    </ul>
+</script>

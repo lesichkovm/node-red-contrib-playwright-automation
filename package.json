@@ -1,0 +1,46 @@
+{
+  "name": "node-red-contrib-playwright-automation",
+  "version": "0.1.0",
+  "description": "Node-RED nodes for browser automation with Playwright",
+  "main": "index.js",
+  "files": [
+    "playwright/*"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "node-red",
+    "playwright",
+    "browser",
+    "automation"
+  ],
+  "node-red": {
+    "version": ">=2.0.0",
+    "nodes": {
+      "playwright-automation": "playwright/playwright.js",
+      "playwright-automation-config": "playwright/playwright.js"
+    },
+    "palette": {
+      "name": "playwright-automation",
+      "label": "Playwright Automation",
+      "color": "#a6bbcf"
+    }
+  },
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lesichkovm/node-red-contrib-playwright-automation.git"
+  },
+  "homepage": "https://github.com/lesichkovm/node-red-contrib-playwright-automation#readme",
+  "bugs": {
+    "url": "https://github.com/lesichkovm/node-red-contrib-playwright-automation/issues"
+  },
+  "dependencies": {
+    "playwright": "^1.42.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

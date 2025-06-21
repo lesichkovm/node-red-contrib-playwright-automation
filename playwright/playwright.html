@@ -1,0 +1,171 @@
+<link rel="stylesheet" href="playwright/playwright.css" type="text/css">
+
+<script type="text/javascript">
+    // Register the config node in the 'playwright-automation' category
+    RED.nodes.registerType('playwright-automation-config', {
+        category: 'playwright-automation',
+        paletteLabel: 'Playwright Automation Config',
+        defaults: {
+            name: { value: '' },
+            browserType: { value: 'chromium', required: true },
+            headless: { value: true },
+            slowMo: { value: 0, validate: RED.validators.number() }
+        },
+        label: function() {
+            return this.name || 'Playwright Config';
+        }
+    });
+
+    // Register the action node in the 'playwright-automation' category
+    RED.nodes.registerType('playwright-automation', {
+        category: 'playwright-automation',
+        paletteLabel: 'Playwright Automation',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: '' },
+            config: { type: 'playwright-automation-config', required: true },
+            action: { value: 'navigate', required: true },
+            selector: { value: '' },
+            value: { value: '' },
+            waitForNavigation: { value: true },
+            waitForSelector: { value: '' },
+            waitForTimeout: { value: 30000, validate: RED.validators.number() }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-globe',
+        label: function() {
+            return this.name || `Playwright Automation: ${this.action}`;
+        },
+        oneditprepare: function() {
+            const node = this;
+            
+            // Action change handler
+            $('#node-input-action').on('change', function() {
+                updateActionFields($(this).val());
+            });
+
+            // Update fields based on action
+            function updateActionFields(action) {
+                // Hide all fields first
+                $('.action-field').hide();
+                
+                // Show common fields
+                $('.field-name, .field-config').show();
+                
+                // Show action-specific fields
+                switch(action) {
+                    case 'navigate':
+                        $('.field-value').show();
+                        $('.field-waitForNavigation').show();
+                        break;
+                    case 'click':
+                        $('.field-selector, .field-waitForSelector, .field-waitForTimeout').show();
+                        break;
+                    case 'fill':
+                        $('.field-selector, .field-value, .field-waitForSelector, .field-waitForTimeout').show();
+                        break;
+                    case 'screenshot':
+                        $('.field-value').show();
+                        break;
+                    case 'evaluate':
+                        $('.field-value').show();
+                        break;
+                }
+            }
+            
+            // Initialize fields
+            updateActionFields(node.action);
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="playwright-automation-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-browserType"><i class="fa fa-globe"></i> Browser</label>
+        <select id="node-config-input-browserType">
+            <option value="chromium">Chromium</option>
+            <option value="firefox">Firefox</option>
+            <option value="webkit">WebKit (Safari)</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-headless">
+            <input type="checkbox" id="node-config-input-headless" style="display: inline-block; width: auto; vertical-align: top;">
+            <span style="width: 70%">Run in headless mode</span>
+        </label>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-slowMo"><i class="fa fa-clock-o"></i> Slow Motion (ms)</label>
+        <input type="number" id="node-config-input-slowMo" min="0" step="10" placeholder="0">
+    </div>
+</script>
+
+<script type="text/html" data-template-name="playwright-automation">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-config"><i class="fa fa-cog"></i> Playwright Config</label>
+        <input type="text" id="node-input-config">
+    </div>
+    <div class="form-row">
+        <label for="node-input-action"><i class="fa fa-play-circle"></i> Action</label>
+        <select id="node-input-action">
+            <option value="navigate">Navigate to URL</option>
+            <option value="click">Click Element</option>
+            <option value="fill">Fill Form</option>
+            <option value="screenshot">Take Screenshot</option>
+            <option value="evaluate">Evaluate JavaScript</option>
+        </select>
+    </div>
+    <div class="form-row field-selector" style="display: none;">
+        <label for="node-input-selector"><i class="fa fa-mouse-pointer"></i> CSS Selector</label>
+        <input type="text" id="node-input-selector" placeholder="e.g., #submit-button">
+    </div>
+    <div class="form-row field-value" style="display: none;">
+        <label for="node-input-value"><i class="fa fa-font"></i> Value</label>
+        <input type="text" id="node-input-value" placeholder="Value">
+    </div>
+    <div class="form-row field-waitForNavigation" style="display: none;">
+        <label for="node-input-waitForNavigation">
+            <input type="checkbox" id="node-input-waitForNavigation" style="display: inline-block; width: auto; vertical-align: top;">
+            <span>Wait for navigation to complete</span>
+        </label>
+    </div>
+    <div class="form-row field-waitForSelector" style="display: none;">
+        <label for="node-input-waitForSelector"><i class="fa fa-hourglass-half"></i> Wait for Selector</label>
+        <input type="text" id="node-input-waitForSelector" placeholder="e.g., .loading-indicator">
+    </div>
+    <div class="form-row field-waitForTimeout" style="display: none;">
+        <label for="node-input-waitForTimeout"><i class="fa fa-clock-o"></i> Wait Timeout (ms)</label>
+        <input type="number" id="node-input-waitForTimeout" min="0" step="1000" value="30000">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="playwright-automation">
+    <p>A node for browser automation using Playwright Automation.</p>
+    <h3>Actions</h3>
+    <ul>
+        <li><b>Navigate to URL</b>: Navigate to a specific URL.</li>
+        <li><b>Click Element</b>: Click on an element matching the CSS selector.</li>
+        <li><b>Fill Form</b>: Fill a form field with the specified value.</li>
+        <li><b>Take Screenshot</b>: Capture a screenshot of the current page.</li>
+        <li><b>Evaluate JavaScript</b>: Execute JavaScript in the browser context.</li>
+    </ul>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">string | object</span></dt>
+        <dd>For 'navigate' action, can be used as the URL. For other actions, can be used as input value.</dd>
+    </dl>
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">buffer | any</span></dt>
+        <dd>For 'screenshot' action, contains the screenshot buffer. For 'evaluate' action, contains the result of the evaluation.</dd>
+    </dl>
+</script>

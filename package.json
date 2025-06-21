@@ -4,7 +4,6 @@
   "description": "Node-RED nodes for browser automation with Playwright",
   "main": "index.js",
   "files": [
-    "playwright/*",
     "playwright-automation/*"
   ],
   "scripts": {

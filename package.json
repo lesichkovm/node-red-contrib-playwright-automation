@@ -4,7 +4,8 @@
   "description": "Node-RED nodes for browser automation with Playwright",
   "main": "index.js",
   "files": [
-    "playwright/*"
+    "playwright/*",
+    "playwright-automation/*"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,7 +18,8 @@
   ],
   "node-red": {
     "nodes": {
-      "playwright": "playwright/playwright.js"
+      "playwright": "playwright/playwright.js",
+      "playwright-automation": "playwright-automation/playwright-automation.js"
     }
   },
   "author": "",
